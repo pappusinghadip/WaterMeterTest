@@ -49,6 +49,8 @@ class BluetoothSettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
         setContentView(R.layout.activity_bluetooth_settings)
 
         initViews()
