@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <group android:id="@+id/settings_group"
+        android:checkableBehavior="single">
+        
+        <item
+            android:id="@+id/nav_bluetooth"
+            android:icon="@android:drawable/stat_sys_data_bluetooth"
+            android:title="Bluetooth" />
+            
+        <item
+            android:id="@+id/nav_commands"
+            android:icon="@android:drawable/ic_menu_send"
+            android:title="Commands" />
+            
+    </group>
+    
+    <group android:id="@+id/command_groups"
+        android:checkableBehavior="single">
+        
+        <item
+            android:id="@+id/nav_common"
+            android:icon="@android:drawable/ic_menu_preferences"
+            android:title="Common" />
+            
+        <item
+            android:id="@+id/nav_network"
+            android:icon="@android:drawable/stat_sys_data_bluetooth"
+            android:title="Network" />
+            
+    </group>
+    
+    <group android:id="@+id/account_group">
+        
+        <item
+            android:id="@+id/nav_logout"
+            android:icon="@android:drawable/ic_menu_close_clear_cancel"
+            android:title="Logout" />
+            
+    </group>
+    
+</menu>

@@ -1,0 +1,46 @@
+<resources>
+    <string name="app_name">WaterMeterTest</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <!-- Login Screen -->
+    <string name="login_title">Welcome Back</string>
+    <string name="login_subtitle">Sign in to continue to Water Meter</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="login_button">Sign In</string>
+    <string name="email_helper">Enter your email address</string>
+    <string name="password_helper">Minimum 6 characters required</string>
+    
+    <!-- Accessibility -->
+    <string name="app_logo_description">Water Meter App Logo</string>
+    <string name="email_icon_description">Email icon</string>
+    <string name="password_icon_description">Password icon</string>
+    <string name="password_toggle_description">Toggle password visibility</string>
+    <string name="login_button_description">Sign in to your account</string>
+    <string name="loading_description">Loading, please wait</string>
+    
+    <!-- Validation Messages -->
+    <string name="error_email_required">Email is required</string>
+    <string name="error_email_invalid">Please enter a valid email address</string>
+    <string name="error_password_required">Password is required</string>
+    <string name="error_password_too_short">Password must be at least 6 characters</string>
+    <string name="error_password_weak">Password should contain letters and numbers</string>
+    <string name="error_login_failed">Login failed. Please check your credentials.</string>
+    <string name="error_network">Network error. Please check your connection.</string>
+
+    <!-- Commands -->
+    <string name="command_parameters">Command Parameters</string>
+    <string name="execute">Execute</string>
+    <string name="cancel">Cancel</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="error_invalid_format">Invalid format</string>
+    <string name="error_invalid_number">Invalid number</string>
+    <string name="error_value_min">Value must be at least %1$d</string>
+    <string name="error_value_max">Value must be at most %1$d</string>
+    <string name="hint_enter_number">Enter number</string>
+    <string name="hint_ip_address">e.g., 192.168.1.100</string>
+    <string name="hint_port">e.g., 8080</string>
+    <string name="hint_serial">Enter 8-digit serial number</string>
+    <string name="auto_calculated">Auto-calculated</string>
+</resources>
