@@ -256,9 +256,16 @@ class BluetoothManager(private val context: Context) {
         }
     }
     
+    private var isConnecting = false
+
     fun connectToDevice(deviceModel: BluetoothDeviceModel) {
         if (!checkBluetoothPermission() || bluetoothAdapter == null) {
             connectionListener?.onConnectionFailed("Bluetooth not available")
+            return
+        }
+        
+        if (isConnecting) {
+            Log.w(TAG, "Connection attempt ignored: Already connecting")
             return
         }
         
@@ -279,141 +286,147 @@ class BluetoothManager(private val context: Context) {
             return
         }
         
+        isConnecting = true
         Thread {
             var attempt = 1
             val maxAttempts = 2
             var success = false
             
-            while (attempt <= maxAttempts && !success) {
-                try {
-                    Log.d(TAG, "Connection attempt $attempt of $maxAttempts")
-                    
-                    stopDiscovery()
-                    Thread.sleep(1000)
-                    
+            try {
+                while (attempt <= maxAttempts && !success) {
                     try {
-                        Log.d(TAG, "Attempting service discovery...")
-                        device.fetchUuidsWithSdp()
-                        Thread.sleep(2000)
-                    } catch (sdpException: Exception) {
-                        Log.w(TAG, "SDP failed, continuing anyway: ${sdpException.message}")
-                    }
-                    
-                    // Check if already connected to the same device
-                    if (connectedDevice?.address == deviceModel.address && isConnected()) {
-                        Log.d(TAG, "Already connected to ${deviceModel.address}")
-                        mainHandler.post {
-                            connectionListener?.onConnected(deviceModel)
-                        }
-                        return@Thread
-                    }
-
-                    // Ensure previous connection is closed
-                    cleanup()
-                    
-                    Log.d(TAG, "Attempting to connect to device: ${deviceModel.address} (${deviceModel.name})")
-                    
-                    var connected = false
-                    var lastException: IOException? = null
-                    
-                    // Method 1: Secure RFCOMM
-                    try {
-                        Log.d(TAG, "Trying method 1: Secure RFCOMM")
-                        bluetoothSocket = device.createRfcommSocketToServiceRecord(SPP_UUID)
-                        bluetoothSocket?.connect()
-                        connected = true
-                        Log.d(TAG, "Method 1 succeeded")
-                    } catch (e: IOException) {
-                        Log.w(TAG, "Method 1 failed: ${e.message}")
-                        lastException = e
-                        try { bluetoothSocket?.close() } catch (ignore: Exception) {}
-                    }
-                    
-                    // Method 2: Insecure RFCOMM (New Fallback)
-                    if (!connected) {
+                        Log.d(TAG, "Connection attempt $attempt of $maxAttempts")
+                        
+                        stopDiscovery()
+                        Thread.sleep(1000)
+                        
                         try {
-                            Log.d(TAG, "Trying method 2: Insecure RFCOMM")
-                            bluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID)
+                            Log.d(TAG, "Attempting service discovery...")
+                            device.fetchUuidsWithSdp()
+                            Thread.sleep(2000)
+                        } catch (sdpException: Exception) {
+                            Log.w(TAG, "SDP failed, continuing anyway: ${sdpException.message}")
+                        }
+                        
+                        // Check if already connected to the same device
+                        if (connectedDevice?.address == deviceModel.address && isConnected()) {
+                            Log.d(TAG, "Already connected to ${deviceModel.address}")
+                            mainHandler.post {
+                                connectionListener?.onConnected(deviceModel)
+                            }
+                            success = true
+                            return@Thread
+                        }
+
+                        // Ensure previous connection is closed
+                        cleanup()
+                        
+                        Log.d(TAG, "Attempting to connect to device: ${deviceModel.address} (${deviceModel.name})")
+                        
+                        var connected = false
+                        var lastException: IOException? = null
+                        
+                        // Method 1: Secure RFCOMM
+                        try {
+                            Log.d(TAG, "Trying method 1: Secure RFCOMM")
+                            bluetoothSocket = device.createRfcommSocketToServiceRecord(SPP_UUID)
                             bluetoothSocket?.connect()
                             connected = true
-                            Log.d(TAG, "Method 2 succeeded")
+                            Log.d(TAG, "Method 1 succeeded")
                         } catch (e: IOException) {
-                            Log.w(TAG, "Method 2 failed: ${e.message}")
+                            Log.w(TAG, "Method 1 failed: ${e.message}")
                             lastException = e
                             try { bluetoothSocket?.close() } catch (ignore: Exception) {}
                         }
-                    }
-                    
-                    // Method 3: Reflection (Channel 1)
-                    if (!connected) {
-                        try {
-                            Log.d(TAG, "Trying method 3: Reflection channel 1")
-                            bluetoothSocket = device.javaClass
-                                .getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
-                                .invoke(device, 1) as BluetoothSocket
-                            bluetoothSocket?.connect()
-                            connected = true
-                            Log.d(TAG, "Method 3 succeeded")
-                        } catch (e: Exception) {
-                            Log.w(TAG, "Method 3 failed: ${e.message}")
-                            lastException = IOException(e)
-                            try { bluetoothSocket?.close() } catch (ignore: Exception) {}
-                        }
-                    }
-                    
-                    // Method 4: Reflection (Channels 2-3 only to save time)
-                    if (!connected) {
-                        for (channel in 2..3) {
-                            if (connected) break
+                        
+                        // Method 2: Insecure RFCOMM (New Fallback)
+                        if (!connected) {
                             try {
-                                Log.d(TAG, "Trying method 4: Reflection channel $channel")
-                                bluetoothSocket = device.javaClass
-                                    .getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
-                                    .invoke(device, channel) as BluetoothSocket
+                                Log.d(TAG, "Trying method 2: Insecure RFCOMM")
+                                bluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID)
                                 bluetoothSocket?.connect()
                                 connected = true
-                                Log.d(TAG, "Method 4 succeeded with channel $channel")
-                                break
+                                Log.d(TAG, "Method 2 succeeded")
+                            } catch (e: IOException) {
+                                Log.w(TAG, "Method 2 failed: ${e.message}")
+                                lastException = e
+                                try { bluetoothSocket?.close() } catch (ignore: Exception) {}
+                            }
+                        }
+                        
+                        // Method 3: Reflection (Channel 1)
+                        if (!connected) {
+                            try {
+                                Log.d(TAG, "Trying method 3: Reflection channel 1")
+                                bluetoothSocket = device.javaClass
+                                    .getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
+                                    .invoke(device, 1) as BluetoothSocket
+                                bluetoothSocket?.connect()
+                                connected = true
+                                Log.d(TAG, "Method 3 succeeded")
                             } catch (e: Exception) {
-                                Log.w(TAG, "Method 4 channel $channel failed: ${e.message}")
+                                Log.w(TAG, "Method 3 failed: ${e.message}")
                                 lastException = IOException(e)
                                 try { bluetoothSocket?.close() } catch (ignore: Exception) {}
                             }
                         }
-                    }
-                    
-                    if (!connected) {
-                        throw IOException("All connection methods failed. Last error: ${lastException?.message ?: "Unknown"}")
-                    }
-                    
-                    outputStream = bluetoothSocket?.outputStream
-                    connectedDevice = device
-                    
-                    if (bluetoothSocket?.isConnected != true || outputStream == null) {
-                        throw IOException("Connection established but socket or stream is null")
-                    }
-                    
-                    sharedPrefsManager.saveSelectedBluetoothDevice(deviceModel.address!!)
-                    
-                    Log.d(TAG, "Successfully connected to ${deviceModel.address}")
-                    success = true
-                    
-                    mainHandler.post {
-                        connectionListener?.onConnected(deviceModel)
-                    }
-                    
-                } catch (e: Exception) {
-                    Log.e(TAG, "Connection attempt $attempt failed", e)
-                    if (attempt == maxAttempts) {
-                        mainHandler.post {
-                            connectionListener?.onConnectionFailed("Connection failed: ${e.message}")
+                        
+                        // Method 4: Reflection (Channels 2-3 only to save time)
+                        if (!connected) {
+                            for (channel in 2..3) {
+                                if (connected) break
+                                try {
+                                    Log.d(TAG, "Trying method 4: Reflection channel $channel")
+                                    bluetoothSocket = device.javaClass
+                                        .getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
+                                        .invoke(device, channel) as BluetoothSocket
+                                    bluetoothSocket?.connect()
+                                    connected = true
+                                    Log.d(TAG, "Method 4 succeeded with channel $channel")
+                                    break
+                                } catch (e: Exception) {
+                                    Log.w(TAG, "Method 4 channel $channel failed: ${e.message}")
+                                    lastException = IOException(e)
+                                    try { bluetoothSocket?.close() } catch (ignore: Exception) {}
+                                }
+                            }
                         }
-                    } else {
-                        // Wait before retry
-                        try { Thread.sleep(1500) } catch (ignore: Exception) {}
+                        
+                        if (!connected) {
+                            throw IOException("All connection methods failed. Last error: ${lastException?.message ?: "Unknown"}. Ensure device supports Serial Port Profile (SPP).")
+                        }
+                        
+                        outputStream = bluetoothSocket?.outputStream
+                        connectedDevice = device
+                        
+                        if (bluetoothSocket?.isConnected != true || outputStream == null) {
+                            throw IOException("Connection established but socket or stream is null")
+                        }
+                        
+                        sharedPrefsManager.saveSelectedBluetoothDevice(deviceModel.address!!)
+                        
+                        Log.d(TAG, "Successfully connected to ${deviceModel.address}")
+                        success = true
+                        
+                        mainHandler.post {
+                            connectionListener?.onConnected(deviceModel)
+                        }
+                        
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Connection attempt $attempt failed", e)
+                        if (attempt == maxAttempts) {
+                            mainHandler.post {
+                                connectionListener?.onConnectionFailed("Connection failed: ${e.message}")
+                            }
+                        } else {
+                            // Wait before retry
+                            try { Thread.sleep(1500) } catch (ignore: Exception) {}
+                        }
                     }
+                    attempt++
                 }
-                attempt++
+            } finally {
+                isConnecting = false
             }
         }.start()
     }

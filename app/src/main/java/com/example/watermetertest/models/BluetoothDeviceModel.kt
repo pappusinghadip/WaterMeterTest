@@ -6,10 +6,17 @@ data class BluetoothDeviceModel(
     var name: String? = null,
     var address: String? = null,
     var isPaired: Boolean = false,
-    var isSelected: Boolean = false
+    var isSelected: Boolean = false,
+    var deviceType: DeviceType = DeviceType.CLASSIC
 ) : Serializable {
     
-    constructor(name: String?, address: String?, isPaired: Boolean) : this(name, address, isPaired, false)
+    enum class DeviceType {
+        CLASSIC,
+        BLE
+    }
+    
+    constructor(name: String?, address: String?, isPaired: Boolean) : this(name, address, isPaired, false, DeviceType.CLASSIC)
+    constructor(name: String?, address: String?, isPaired: Boolean, type: DeviceType) : this(name, address, isPaired, false, type)
     
     fun getDisplayName(): String {
         return if (!name.isNullOrEmpty()) name!! else "Unknown Device"

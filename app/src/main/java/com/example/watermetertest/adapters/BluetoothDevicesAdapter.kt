@@ -54,9 +54,14 @@ class BluetoothDevicesAdapter(private val listener: OnDeviceClickListener) :
 
             if (device.isPaired) {
                 deviceStatus.visibility = View.VISIBLE
-                deviceStatus.text = "Paired"
+                deviceStatus.text = if (device.deviceType == BluetoothDeviceModel.DeviceType.BLE) "BLE" else "Paired"
             } else {
-                deviceStatus.visibility = View.GONE
+                if (device.deviceType == BluetoothDeviceModel.DeviceType.BLE) {
+                    deviceStatus.visibility = View.VISIBLE
+                    deviceStatus.text = "BLE"
+                } else {
+                    deviceStatus.visibility = View.GONE
+                }
             }
 
             if (device.address == selectedDeviceAddress) {

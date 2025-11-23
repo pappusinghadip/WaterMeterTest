@@ -90,6 +90,15 @@ class BluetoothSettingsActivity : AppCompatActivity() {
                 }
                 
                 showConnectionProgress("Connecting to ${device.getDisplayName()}...")
+                
+                // Safety timeout: Dismiss dialog after 30 seconds if no response
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    if (connectionProgressDialog?.isShowing == true) {
+                        dismissConnectionProgress()
+                        Toast.makeText(this@BluetoothSettingsActivity, "Connection timed out", Toast.LENGTH_LONG).show()
+                    }
+                }, 30000)
+                
                 bluetoothViewModel.connectToDevice(device)
             }
 
@@ -202,6 +211,7 @@ class BluetoothSettingsActivity : AppCompatActivity() {
                     }
                 }, 15000)
             } else {
+                // For any other error (including "Couldn't pair"), dismiss the dialog immediately
                 dismissConnectionProgress()
                 Toast.makeText(this, "Error: $it", Toast.LENGTH_LONG).show()
             }
